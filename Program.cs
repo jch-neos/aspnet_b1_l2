@@ -1,23 +1,15 @@
-using System;
-using System.IO;
-using System.Reflection;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using FluentValidation.AspNetCore;
-using Swashbuckle.AspNetCore.Swagger;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using MicroElements.Swashbuckle.FluentValidation;
 using MyApi.Models;
 using FluentValidation;
 using MyApi.Filters;
-using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text.Json.Serialization;
+using Asp.Versioning.ApiExplorer;
+using Asp.Versioning;
 
 namespace MyApi;
 
@@ -28,25 +20,61 @@ class Program
 
         var builder = WebApplication.CreateBuilder();
         var services = builder.Services;
+        var jwksurl = builder.Configuration["Jwt:JwksUrl"];
+
+        builder.Services.AddProblemDetails();
+        builder.Services.AddMvc();
 
         _ = services.AddDbContext<AppDbContext>(options =>
-                        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-        services.AddMvcCore().AddApiExplorer();
-        services.AddAuthorization(c=>{
+        services
+            .AddMvcCore()
+            .AddJsonOptions(o =>
+                o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve);
+
+        builder.Services.AddSwaggerGen(options => options.OperationFilter<SwaggerDefaultValues>());
+
+        services
+            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(o =>
+            {
+                o.TokenValidationParameters = new TokenValidationParameters
+                {
+                    IssuerSigningKeyResolver = (_, _, _, _) => GetIssuerSigningKey(),
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = false,
+                    ValidateIssuerSigningKey = true
+                };
+            });
+        services.AddSingleton<IAuthorizationHandler, RequireScopeHandler>();
+        services.AddAuthorization(c =>
+        {
             c.AddPolicy("Bearer", new AuthorizationPolicyBuilder()
                 .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme‌​)
-                .RequireAuthenticatedUser().Build());
+                .RequireAuthenticatedUser()
+                .AddRequirements(
+                    new ScopeRequirement(builder.Configuration["Jwt:Issuer"], "ReadData")
+                ).Build());
+            c.AddPolicy("BearerWrite", new AuthorizationPolicyBuilder()
+                .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme‌​)
+                .RequireAuthenticatedUser().AddRequirements(
+                    new ScopeRequirement(builder.Configuration["Jwt:Issuer"], "Write")
+                ).Build());
         });
 
         services
         .AddSwaggerGen(c =>
         {
+
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "BooksDemo API", Version = "v1" });
 
-            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            c.IncludeXmlComments(xmlPath);
+            // var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            // var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            // c.IncludeXmlComments(xmlPath);
 
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
@@ -56,27 +84,30 @@ class Program
                 Type = SecuritySchemeType.Http,
                 Scheme = "bearer"
             });
+            // c.AddSecurityRequirement(new OpenApiSecurityRequirement{
+            //         {
+            //             new OpenApiSecurityScheme
+            //             {
+            //                 Reference = new OpenApiReference
+            //                 {
+            //                     Type=ReferenceType.SecurityScheme,
+            //                     Id="Bearer"
+            //                 }
+            //             },
+            //             new string[]{}
+            //         }
+            // });
 
-            c.OperationFilter<DefaultResponseOperationFilter>();
-            c.SchemaFilter<BookSchemaFilter>();
-
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "BooksDemo API", Version = "v1" });
-
-            // Add security definition for JWT authentication
-            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-            {
-                Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-                Name = "Authorization",
-                In = ParameterLocation.Header,
-                Type = SecuritySchemeType.Http,
-                Scheme = "bearer"
-            });
+            c.OperationFilter<AuthorizeCheckOperationFilter>();
+            // c.OperationFilter<DefaultResponseOperationFilter>();
+            // c.SchemaFilter<BookSchemaFilter>();
         });
+
+        //services.ConfigureOptions<ConfigureSwaggerOptions>();
 
         _ = services
                 .AddValidatorsFromAssemblyContaining<BookValidator>()
-                .AddFluentValidationAutoValidation(c => c.DisableDataAnnotationsValidation = true)
-                .AddFluentValidationRulesToSwagger();
+                .AddFluentValidationAutoValidation(c => c.DisableDataAnnotationsValidation = true);
 
         var app = builder.Build();
 
@@ -89,14 +120,23 @@ class Program
 
         app.UseRouting();
 
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllers();
-        
+
         app.UseSwagger();
         app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "BooksDemo API v1"));
 
 
         await app.RunAsync();
+
+        IList<JsonWebKey> GetIssuerSigningKey()
+        {
+            var json = new HttpClient().GetStringAsync(jwksurl).Result;
+            var kset = JsonWebKeySet.Create(json);
+            return kset.Keys;
+        }
+
     }
 }

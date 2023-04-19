@@ -2,6 +2,7 @@ using Bogus;
 using Microsoft.EntityFrameworkCore;
 using MyApi.Models;
 
+#pragma warning disable CS1591
 namespace MyApi
 {
     public class AppDbContext : DbContext
@@ -70,3 +71,4 @@ namespace MyApi
         }
       }
 }
+#pragma warning restore CS1591

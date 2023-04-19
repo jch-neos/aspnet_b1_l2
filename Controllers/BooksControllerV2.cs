@@ -13,14 +13,14 @@ namespace MyApi.Controllers;
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
 [Authorize("Bearer")]
-[ApiVersion("1.0")]
-public class BooksController : ControllerBase
+[ApiVersion("2.0")]
+public class BooksControllerV2 : ControllerBase
 {
     private readonly AppDbContext _context;
 
     /// <summary> Constructor </summary>
     /// <param name="context"> The database context </param>
-    public BooksController(AppDbContext context)
+    public BooksControllerV2(AppDbContext context)
     {
         _context = context;
     }

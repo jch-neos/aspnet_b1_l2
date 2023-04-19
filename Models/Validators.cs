@@ -1,8 +1,11 @@
 namespace MyApi.Models;
 
 using FluentValidation;
+
+/// <summary> validator for books </summary>
 public class BookValidator : AbstractValidator<Book>
 {
+    /// <summary> constructor : init rules</summary>
     public BookValidator()
     {
         RuleFor(b => b.Title).NotEmpty().MaximumLength(100);
@@ -11,8 +14,10 @@ public class BookValidator : AbstractValidator<Book>
     }
 }
 
+/// <summary> validator for authors </summary>
 public class AuthorValidator : AbstractValidator<Author>
 {
+    /// <summary> constructor : init rules</summary>
     public AuthorValidator()
     {
         RuleFor(a => a.Name).NotEmpty().MaximumLength(100);
