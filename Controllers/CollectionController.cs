@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -6,10 +5,8 @@ using MyApi.Models;
 
 namespace MyApi.Controllers;
 /// <summary> Controller for collections </summary>
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v1/[controller]")]
 [ApiController]
-[ApiVersion("1.0")]
-[ApiVersion("2.0")]
 public class CollectionController : ControllerBase {
     private readonly AppDbContext _context;
 

@@ -1,14 +1,11 @@
-using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyApi;
 using MyApi.Models;
 
 /// <summary> Controller for authors </summary>
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v1/[controller]")]
 [ApiController]
-[ApiVersion("1.0")]
-[ApiVersion("2.0")]
 public class AuthorController : ControllerBase {
     private readonly AppDbContext _context;
 

@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,10 +9,9 @@ using MyApi.Models;
 
 namespace MyApi.Controllers;
 /// <summary> Controller for books </summary>
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v1/[controller]")]
 [ApiController]
 [Authorize("Bearer")]
-[ApiVersion("1.0")]
 public class BooksController : ControllerBase
 {
     private readonly AppDbContext _context;

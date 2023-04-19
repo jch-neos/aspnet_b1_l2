@@ -8,8 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text.Json.Serialization;
-using Asp.Versioning.ApiExplorer;
-using Asp.Versioning;
+
 
 namespace MyApi;
 
@@ -22,7 +21,6 @@ class Program
         var services = builder.Services;
         var jwksurl = builder.Configuration["Jwt:JwksUrl"];
 
-        builder.Services.AddProblemDetails();
         builder.Services.AddMvc();
 
         _ = services.AddDbContext<AppDbContext>(options =>
@@ -32,8 +30,6 @@ class Program
             .AddMvcCore()
             .AddJsonOptions(o =>
                 o.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve);
-
-        builder.Services.AddSwaggerGen(options => options.OperationFilter<SwaggerDefaultValues>());
 
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -59,6 +55,9 @@ class Program
                 .AddRequirements(
                     new ScopeRequirement(builder.Configuration["Jwt:Issuer"], "ReadData")
                 ).Build());
+
+
+
             c.AddPolicy("BearerWrite", new AuthorizationPolicyBuilder()
                 .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme‌​)
                 .RequireAuthenticatedUser().AddRequirements(
@@ -125,9 +124,13 @@ class Program
 
         app.MapControllers();
 
+        app.MapGet("/ok", async context =>
+                {
+                    await context.Response.WriteAsync("Ok");
+                }).RequireAuthorization("Bearer");
+
         app.UseSwagger();
         app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "BooksDemo API v1"));
-
 
         await app.RunAsync();
 

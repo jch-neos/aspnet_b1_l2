@@ -10,7 +10,7 @@ Write-Host "Scopes $scp"
 $ClientID = '32687000-a6ef-4a36-9858-f949b3bddf7d'
 $TenantID = '50ccda96-bb37-4cfc-be3f-a79cfbcd8647'
 $Resource = "97eba5e6-0ca6-46fb-b0c2-329b706bb235"
-$ClientSecret = 'bnp8Q~G8p2bi4j4RscMeQF4eb10~RDpeTJWZXcD3'
+#$ClientSecret = 'bnp8Q~G8p2bi4j4RscMeQF4eb10~RDpeTJWZXcD3'
 
 $DeviceCodeRequestParams = @{
     Method = 'POST'
