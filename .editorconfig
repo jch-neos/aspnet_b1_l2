@@ -1,0 +1,22 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = false
+insert_final_newline = false
+
+[*.cs]
+# Enforce K&R style
+csharp_new_line_before_open_brace                                  = none
+csharp_new_line_before_else                                        = false : warning
+csharp_new_line_before_catch                                       = false : warning
+csharp_new_line_before_finally                                     = false : warning
+csharp_new_line_before_members_in_object_initializers              = false : warning
+csharp_new_line_before_members_in_anonymous_types                  = false : warning
+csharp_new_line_between_query_expression_clauses                   = false : warning
